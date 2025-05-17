@@ -5,12 +5,15 @@ const cookieParser = require('cookie-parser')
 require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 // middleware
 app.use(cors({
-    origin: [],
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:3001',
+    ],
     credentials: true
 }))
 
@@ -43,6 +46,13 @@ async function run() {
 
         app.get('/rooms', async (req,res) => {
             const result = await roomCollections.find().toArray()
+            res.send(result)
+        })
+
+        app.get('/rooms/:id',async(req,res) => {
+            const id = req.params.id
+            const qurey = {_id: new ObjectId(id)}
+            const result = roomCollections.findOne(qurey)
             res.send(result)
         })
 
