@@ -44,17 +44,73 @@ async function run() {
         const roomCollections = client.db('INNORA').collection('allRooms')
 
 
-        app.get('/rooms', async (req,res) => {
+        app.get('/rooms', async (req, res) => {
             const result = await roomCollections.find().toArray()
             res.send(result)
         })
 
-        app.get('/rooms/:id',async(req,res) => {
+        app.get('/rooms/:id', async (req, res) => {
             const id = req.params.id
-            const qurey = {_id: new ObjectId(id)}
-            const result = roomCollections.findOne(qurey)
+            const qurey = { _id: new ObjectId(id) }
+            const result = await roomCollections.findOne(qurey)
             res.send(result)
         })
+
+
+
+
+
+        // user's reviews
+        app.patch('/rooms/:id/reviews', async (req, res) => {
+            const { id } = req.params;
+            const { user_email, user_name, comment, rating } = req.body;
+
+            const query = { _id: new ObjectId(id) };
+
+            const room = await roomCollections.findOne(query);
+            if (!room) return res.status(404).send({ message: 'Room not found' });
+
+            const existingReviews = room.reviews || [];
+
+            // ✅ Check if this email has already submitted a review
+            const alreadyReviewed = existingReviews.some(r => r.user_email === user_email);
+            if (alreadyReviewed) {
+                return res.status(400).send({ message: 'You have already reviewed this room.' });
+            }
+
+            // ✅ Create new review
+            const newReview = {
+                user_email,
+                user_name,
+                comment,
+                rating,
+                date: new Date()
+            };
+
+            const updatedReviews = [...existingReviews, newReview];
+            const reviewsCount = updatedReviews.length;
+
+            const totalRating = updatedReviews.reduce((sum, r) => sum + r.rating, 0);
+            const averageRating = parseFloat((totalRating / reviewsCount).toFixed(1));
+
+            const updateDoc = {
+                $set: {
+                    reviews: updatedReviews,
+                    reviewsCount,
+                    rating: averageRating
+                }
+            };
+
+            const result = await roomCollections.findOneAndUpdate(query, updateDoc, {
+                returnDocument: 'after'
+            });
+
+            res.send(result.value);
+        });
+        
+
+
+
 
 
 
@@ -93,7 +149,7 @@ run().catch(console.dir);
 
 
 
-app.get('/',(req,res) => {
+app.get('/', (req, res) => {
     res.send('hello')
 })
 
@@ -106,6 +162,6 @@ app.get('/',(req,res) => {
 
 
 
-app.listen(port,() => {
-    console.log('server running on port : ',port)
+app.listen(port, () => {
+    console.log('server running on port : ', port)
 })
