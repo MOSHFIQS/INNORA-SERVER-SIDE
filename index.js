@@ -116,26 +116,49 @@ async function run() {
             res.send(result)
         })
 
-        
+
         app.post('/bookings', async (req, res) => {
-            const singleBookingDetails = req.body;
-            const { userEmail, date } = singleBookingDetails;
+            const booking = req.body;
+            const { userEmail, date, roomId } = booking;
+
             try {
+                // Step 1: Check for existing booking by this user on the same date
                 const existingBooking = await hotelBookingCollections.findOne({
-                    userEmail: userEmail,
-                    date: date
+                    userEmail,
+                    date,
+                    roomId
                 });
 
                 if (existingBooking) {
                     return res.status(400).send({ success: false, message: 'User already booked for this date' });
                 }
-                const result = await hotelBookingCollections.insertOne(singleBookingDetails);
+
+                // Step 2: Check if room is already booked for that date
+                const room = await roomCollections.findOne({ roomId });
+                if (!room) return res.status(404).send({ success: false, message: 'Room not found' });
+
+                const isDateBooked = room.bookedDates?.includes(date);
+                if (isDateBooked) {
+                    return res.status(400).send({ success: false, message: 'Room already booked for this date' });
+                }
+
+                // Step 3: Insert booking
+                const result = await hotelBookingCollections.insertOne(booking);
+
+                // Step 4: Update room's bookedDates
+                await roomCollections.updateOne(
+                    { roomId },
+                    { $push: { bookedDates: date } }
+                );
+
                 res.send({ success: true, result });
+
             } catch (error) {
                 console.error(error);
                 res.status(500).send({ success: false, message: 'Server error' });
             }
         });
+
 
 
 
