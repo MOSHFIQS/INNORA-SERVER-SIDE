@@ -42,6 +42,7 @@ async function run() {
         // await client.connect();
 
         const roomCollections = client.db('INNORA').collection('allRooms')
+        const hotelBookingCollections = client.db('INNORA').collection('allBookings')
 
 
         app.get('/rooms', async (req, res) => {
@@ -107,9 +108,34 @@ async function run() {
 
             res.send(result.value);
         });
+
+
+        // users bookings
+        app.get('/bookings', async (req, res) => {
+            const result = await hotelBookingCollections.find().toArray()
+            res.send(result)
+        })
+
         
+        app.post('/bookings', async (req, res) => {
+            const singleBookingDetails = req.body;
+            const { userEmail, date } = singleBookingDetails;
+            try {
+                const existingBooking = await hotelBookingCollections.findOne({
+                    userEmail: userEmail,
+                    date: date
+                });
 
-
+                if (existingBooking) {
+                    return res.status(400).send({ success: false, message: 'User already booked for this date' });
+                }
+                const result = await hotelBookingCollections.insertOne(singleBookingDetails);
+                res.send({ success: true, result });
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ success: false, message: 'Server error' });
+            }
+        });
 
 
 
