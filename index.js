@@ -7,8 +7,7 @@ const app = express()
 const port = process.env.PORT || 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
-
-// middleware
+// Middlewares
 app.use(cors({
     origin: [
         'http://localhost:3000',
@@ -16,18 +15,13 @@ app.use(cors({
     ],
     credentials: true
 }))
-
 app.use(express.json())
 app.use(cookieParser())
 
+// MongoDB connection URI
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hiz8ocw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
-
-
-
-
-const uri = "mongodb+srv://INNORA:xHa8wfocjKAuLCO1@cluster0.hiz8ocw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+// MongoDB Client setup
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -38,48 +32,39 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
-        // Connect the client to the server	(optional starting in v4.7)
-        // await client.connect();
+        // Collections
+        const roomCollections = client.db('INNORA').collection('allRooms');
+        const hotelBookingCollections = client.db('INNORA').collection('allBookings');
 
-        const roomCollections = client.db('INNORA').collection('allRooms')
-        const hotelBookingCollections = client.db('INNORA').collection('allBookings')
-
-
+        // Get all rooms
         app.get('/rooms', async (req, res) => {
-            const result = await roomCollections.find().toArray()
-            res.send(result)
-        })
+            const result = await roomCollections.find().toArray();
+            res.send(result);
+        });
 
+        // Get single room by ID
         app.get('/rooms/:id', async (req, res) => {
-            const id = req.params.id
-            const qurey = { _id: new ObjectId(id) }
-            const result = await roomCollections.findOne(qurey)
-            res.send(result)
-        })
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await roomCollections.findOne(query);
+            res.send(result);
+        });
 
-
-
-
-
-        // user's reviews
+        // Add a user review to a room
         app.patch('/rooms/:id/reviews', async (req, res) => {
             const { id } = req.params;
             const { user_email, user_name, comment, rating } = req.body;
 
             const query = { _id: new ObjectId(id) };
-
             const room = await roomCollections.findOne(query);
             if (!room) return res.status(404).send({ message: 'Room not found' });
 
             const existingReviews = room.reviews || [];
-
-            // ✅ Check if this email has already submitted a review
             const alreadyReviewed = existingReviews.some(r => r.user_email === user_email);
             if (alreadyReviewed) {
                 return res.status(400).send({ message: 'You have already reviewed this room.' });
             }
 
-            // ✅ Create new review
             const newReview = {
                 user_email,
                 user_name,
@@ -90,7 +75,6 @@ async function run() {
 
             const updatedReviews = [...existingReviews, newReview];
             const reviewsCount = updatedReviews.length;
-
             const totalRating = updatedReviews.reduce((sum, r) => sum + r.rating, 0);
             const averageRating = parseFloat((totalRating / reviewsCount).toFixed(1));
 
@@ -109,58 +93,40 @@ async function run() {
             res.send(result.value);
         });
 
-
-        // users bookings
+        // Get bookings for a specific user by email
         app.get('/bookings/:email', async (req, res) => {
-            const email = req.params.email
-            console.log(email)
-            const query = { userEmail: email }
-            console.log(query)
-            const result = await hotelBookingCollections.find(query).toArray()
-            res.send(result)
-        })
+            const email = req.params.email;
+            const query = { userEmail: email };
+            const result = await hotelBookingCollections.find(query).toArray();
+            res.send(result);
+        });
 
-
-
-
-
-
-
+        // Update a booking date for a specific room
         app.patch('/bookings/update', async (req, res) => {
             const { oldDate, newDate, email, roomId } = req.body;
-            console.log(oldDate, newDate, email, roomId);
-
-            // if()
 
             try {
-
-                const room = await roomCollections.findOne({roomId}) // room have full single collection
-                const isExists = room.bookedDates.find(date => date === newDate)
-                console.log(isExists)
-                if(isExists){
-                    return res.status(400).send({success:false,message:'this room is already booked'})
+                const room = await roomCollections.findOne({ roomId });
+                const isExists = room.bookedDates.find(date => date === newDate);
+                if (isExists) {
+                    return res.status(400).send({ success: false, message: 'This room is already booked' });
                 }
 
-
-                // 1. Update the booking date in hotelBookingCollections
                 const updateBookingDate = await hotelBookingCollections.updateOne(
-                    { roomId, date: oldDate, userEmail: email }, // also match email for safety
+                    { roomId, date: oldDate, userEmail: email },
                     { $set: { date: newDate } }
                 );
 
-                // 2. Remove the old date from roomCollections bookedDates array
                 const roomDateRemoved = await roomCollections.updateOne(
                     { roomId },
                     { $pull: { bookedDates: oldDate } }
                 );
 
-                // 3. Add the new date to roomCollections bookedDates array
                 const newRoomDateAdded = await roomCollections.updateOne(
                     { roomId },
                     { $push: { bookedDates: newDate } }
                 );
 
-                // Check if any update happened
                 if (
                     updateBookingDate.modifiedCount === 0 &&
                     roomDateRemoved.modifiedCount === 0 &&
@@ -172,7 +138,6 @@ async function run() {
                     });
                 }
 
-                // Success response
                 res.send({
                     success: true,
                     message: "Booking date updated successfully",
@@ -184,7 +149,6 @@ async function run() {
                 });
 
             } catch (error) {
-                console.error("Error updating booking date:", error);
                 res.status(500).send({
                     success: false,
                     message: "Internal Server Error",
@@ -193,34 +157,24 @@ async function run() {
             }
         });
 
-
-
-
+        // Delete a booking
         app.delete('/bookings/:email', async (req, res) => {
             const email = req.params.email;
-            const bookingInfo = req.body
-            // console.log(bookingInfo)
-            const { roomId, date } = bookingInfo
-            console.log(roomId,date)
+            const bookingInfo = req.body;
+            const { roomId, date } = bookingInfo;
 
             try {
-                console.log("Room ID:", roomId, "Date to delete:", date);
-
-                // 1. Remove the date from bookedDates array in roomCollections
                 const roomUpdateResult = await roomCollections.updateOne(
                     { roomId: roomId },
                     { $pull: { bookedDates: date } }
                 );
 
-                // 2. Remove the booking from hotelBookingCollections
                 const bookingDeleteResult = await hotelBookingCollections.deleteOne({
                     userEmail: email,
                     roomId: roomId,
                     date: date
                 });
 
-
-                // Final check: if neither was successful
                 if (roomUpdateResult.modifiedCount === 0 && bookingDeleteResult.deletedCount === 0) {
                     return res.status(404).send({ message: "No booking found to delete" });
                 }
@@ -232,25 +186,22 @@ async function run() {
                 });
 
             } catch (error) {
-                console.error("Error deleting booking:", error);
                 res.status(500).send({ message: "Internal server error" });
             }
         });
 
-
-
+        // Get all bookings (admin use case)
         app.get('/bookings', async (req, res) => {
-            const result = await hotelBookingCollections.find().toArray()
-            res.send(result)
-        })
+            const result = await hotelBookingCollections.find().toArray();
+            res.send(result);
+        });
 
-
+        // Add a new booking
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
             const { userEmail, date, roomId } = booking;
 
             try {
-                // Step 1: Check for existing booking by this user on the same date
                 const existingBooking = await hotelBookingCollections.findOne({
                     userEmail,
                     date,
@@ -261,7 +212,6 @@ async function run() {
                     return res.status(400).send({ success: false, message: 'User already booked for this date' });
                 }
 
-                // Step 2: Check if room is already booked for that date
                 const room = await roomCollections.findOne({ roomId });
                 if (!room) return res.status(404).send({ success: false, message: 'Room not found' });
 
@@ -270,10 +220,8 @@ async function run() {
                     return res.status(400).send({ success: false, message: 'Room already booked for this date' });
                 }
 
-                // Step 3: Insert booking
                 const result = await hotelBookingCollections.insertOne(booking);
 
-                // Step 4: Update room's bookedDates
                 await roomCollections.updateOne(
                     { roomId },
                     { $push: { bookedDates: date } }
@@ -282,80 +230,27 @@ async function run() {
                 res.send({ success: true, result });
 
             } catch (error) {
-                console.error(error);
                 res.status(500).send({ success: false, message: 'Server error' });
             }
         });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Send a ping to confirm a successful connection
+        // Optional MongoDB ping for local testing (commented out for deployment)
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
     } finally {
-        // Ensures that the client will close when you finish/error
-        // await client.close();
+        // Keep MongoDB connection open for serverless platforms like Vercel
+        // Do not close client here
     }
 }
 run().catch(console.dir);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Health check route
 app.get('/', (req, res) => {
-    res.send('hello')
-})
+    res.send('hello');
+});
 
-
-
-
-
-
-
-
-
-
+// Start server
 app.listen(port, () => {
-    console.log('server running on port : ', port)
-})
+    console.log('Server running on port:', port);
+});
