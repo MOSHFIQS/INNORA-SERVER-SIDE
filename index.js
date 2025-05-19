@@ -120,6 +120,71 @@ async function run() {
             res.send(result)
         })
 
+
+
+
+
+
+
+        app.patch('/bookings/update', async (req, res) => {
+            const { oldDate, newDate, email, roomId } = req.body;
+            console.log(oldDate, newDate, email, roomId);
+
+            try {
+                // 1. Update the booking date in hotelBookingCollections
+                const updateBookingDate = await hotelBookingCollections.updateOne(
+                    { roomId, date: oldDate, userEmail: email }, // also match email for safety
+                    { $set: { date: newDate } }
+                );
+
+                // 2. Remove the old date from roomCollections bookedDates array
+                const roomDateRemoved = await roomCollections.updateOne(
+                    { roomId },
+                    { $pull: { bookedDates: oldDate } }
+                );
+
+                // 3. Add the new date to roomCollections bookedDates array
+                const newRoomDateAdded = await roomCollections.updateOne(
+                    { roomId },
+                    { $push: { bookedDates: newDate } }
+                );
+
+                // Check if any update happened
+                if (
+                    updateBookingDate.modifiedCount === 0 &&
+                    roomDateRemoved.modifiedCount === 0 &&
+                    newRoomDateAdded.modifiedCount === 0
+                ) {
+                    return res.status(404).send({
+                        success: false,
+                        message: "No booking or room date found to update"
+                    });
+                }
+
+                // Success response
+                res.send({
+                    success: true,
+                    message: "Booking date updated successfully",
+                    result: {
+                        bookingUpdated: updateBookingDate,
+                        oldDateRemoved: roomDateRemoved,
+                        newDateAdded: newRoomDateAdded
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error updating booking date:", error);
+                res.status(500).send({
+                    success: false,
+                    message: "Internal Server Error",
+                    error: error.message
+                });
+            }
+        });
+
+
+
+
         app.delete('/bookings/:email', async (req, res) => {
             const email = req.params.email;
             const { roomId, date, } = req.body;
@@ -156,7 +221,7 @@ async function run() {
                 res.status(500).send({ message: "Internal server error" });
             }
         });
-        
+
 
 
         app.get('/bookings', async (req, res) => {
@@ -206,6 +271,23 @@ async function run() {
                 res.status(500).send({ success: false, message: 'Server error' });
             }
         });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
