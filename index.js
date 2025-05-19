@@ -12,6 +12,7 @@ app.use(cors({
     origin: [
         'http://localhost:3000',
         'http://localhost:3001',
+        'https://innora-server-side.vercel.app'
     ],
     credentials: true
 }))
