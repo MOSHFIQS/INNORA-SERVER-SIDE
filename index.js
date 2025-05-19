@@ -130,7 +130,18 @@ async function run() {
             const { oldDate, newDate, email, roomId } = req.body;
             console.log(oldDate, newDate, email, roomId);
 
+            // if()
+
             try {
+
+                const room = await roomCollections.findOne({roomId}) // room have full single collection
+                const isExists = room.bookedDates.find(date => date === newDate)
+                console.log(isExists)
+                if(isExists){
+                    return res.status(400).send({success:false,message:'this room is already booked'})
+                }
+
+
                 // 1. Update the booking date in hotelBookingCollections
                 const updateBookingDate = await hotelBookingCollections.updateOne(
                     { roomId, date: oldDate, userEmail: email }, // also match email for safety
@@ -187,7 +198,10 @@ async function run() {
 
         app.delete('/bookings/:email', async (req, res) => {
             const email = req.params.email;
-            const { roomId, date, } = req.body;
+            const bookingInfo = req.body
+            // console.log(bookingInfo)
+            const { roomId, date } = bookingInfo
+            console.log(roomId,date)
 
             try {
                 console.log("Room ID:", roomId, "Date to delete:", date);
@@ -204,6 +218,7 @@ async function run() {
                     roomId: roomId,
                     date: date
                 });
+
 
                 // Final check: if neither was successful
                 if (roomUpdateResult.modifiedCount === 0 && bookingDeleteResult.deletedCount === 0) {
