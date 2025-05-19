@@ -14,9 +14,9 @@ app.use(cors({
         'http://localhost:3001',
         'https://innora-server-side.vercel.app'
     ],
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }))
-app.options('*', cors());
 app.use(express.json())
 app.use(cookieParser())
 
