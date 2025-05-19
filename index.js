@@ -111,6 +111,54 @@ async function run() {
 
 
         // users bookings
+        app.get('/bookings/:email', async (req, res) => {
+            const email = req.params.email
+            console.log(email)
+            const query = { userEmail: email }
+            console.log(query)
+            const result = await hotelBookingCollections.find(query).toArray()
+            res.send(result)
+        })
+
+        app.delete('/bookings/:email', async (req, res) => {
+            const email = req.params.email;
+            const { roomId, date, } = req.body;
+
+            try {
+                console.log("Room ID:", roomId, "Date to delete:", date);
+
+                // 1. Remove the date from bookedDates array in roomCollections
+                const roomUpdateResult = await roomCollections.updateOne(
+                    { roomId: roomId },
+                    { $pull: { bookedDates: date } }
+                );
+
+                // 2. Remove the booking from hotelBookingCollections
+                const bookingDeleteResult = await hotelBookingCollections.deleteOne({
+                    userEmail: email,
+                    roomId: roomId,
+                    date: date
+                });
+
+                // Final check: if neither was successful
+                if (roomUpdateResult.modifiedCount === 0 && bookingDeleteResult.deletedCount === 0) {
+                    return res.status(404).send({ message: "No booking found to delete" });
+                }
+
+                res.send({
+                    message: "Booking deleted successfully",
+                    roomUpdate: roomUpdateResult,
+                    bookingDelete: bookingDeleteResult
+                });
+
+            } catch (error) {
+                console.error("Error deleting booking:", error);
+                res.status(500).send({ message: "Internal server error" });
+            }
+        });
+        
+
+
         app.get('/bookings', async (req, res) => {
             const result = await hotelBookingCollections.find().toArray()
             res.send(result)
