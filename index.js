@@ -10,14 +10,14 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // Middlewares
 app.use(cors({
     origin: [
+        'https://innora-server-side.vercel.app',
         'http://localhost:3000',
         'http://localhost:3001',
-        'https://innora-server-side.vercel.app'
+
     ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }))
-app.options('*', cors());
 app.use(express.json())
 app.use(cookieParser())
 
@@ -55,18 +55,18 @@ async function run() {
 
         // Add a user review to a room
         app.patch('/rooms/:id/reviews', async (req, res) => {
-            const { id } = req.params;
+            const id = req.params.id;
             const { user_email, user_name, comment, rating } = req.body;
 
-            const query = { _id: new ObjectId(id) };
+
+            const query = { roomId: id };
             const room = await roomCollections.findOne(query);
-            if (!room) return res.status(404).send({ message: 'Room not found' });
+
+            if (!room) {
+                return res.status(404).send({ message: 'Room not found' });
+            }
 
             const existingReviews = room.reviews || [];
-            const alreadyReviewed = existingReviews.some(r => r.user_email === user_email);
-            if (alreadyReviewed) {
-                return res.status(400).send({ message: 'You have already reviewed this room.' });
-            }
 
             const newReview = {
                 user_email,
@@ -95,6 +95,7 @@ async function run() {
 
             res.send(result.value);
         });
+
 
         // Get bookings for a specific user by email
         app.get('/bookings/:email', async (req, res) => {
