@@ -1,3 +1,4 @@
+
 const express = require('express')
 const cors = require('cors')
 const jwt = require('jsonwebtoken')
@@ -21,6 +22,27 @@ app.use(cors({
 app.use(express.json())
 app.use(cookieParser())
 
+
+
+const verifyToken = (req, res, next) => {
+    const token = req?.cookies?.token;
+    console.log('token from client', token)
+    if (!token) {
+        return res.status(401).send({ message: 'Unauthorized access' })
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'Unauthorized access' })
+        }
+        req.user = decoded
+        next()
+    })
+}
+
+
+
+
+
 // MongoDB connection URI
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hiz8ocw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -39,8 +61,47 @@ async function run() {
         const roomCollections = client.db('INNORA').collection('allRooms');
         const hotelBookingCollections = client.db('INNORA').collection('allBookings');
 
+
+        // jwt methods
+
+        app.post('/jwt', async (req, res) => {
+            const user = req.body
+            console.log(user, 'this is sign In uesrs email')
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: "5h" })
+            res
+                .cookie("token", token, {
+                    httpOnly: true,
+                    secure: false,
+                    sameSite: 'strict'
+                })
+                .send({ success: true, message: 'response from server', token })
+        })
+
+        app.post('/logout', (req, res) => {
+            res.clearCookie('token')
+            res.send({ success: true })
+        })
+
+
+
+
+
+
+
+
+
+
+
         // Get all rooms
-        app.get('/rooms', async (req, res) => {
+        app.get('/rooms', verifyToken,async (req, res) => {
+            console.log(req?.query?.email,req?.user?.email)
+            if ((req.query.email !== req.user.email)){
+                return res.status(403).send({message:'forbidden access'})
+            }
+            const result = await roomCollections.find().toArray();
+            res.send(result);
+        });
+        app.get('/homePageRooms',async (req, res) => {
             const result = await roomCollections.find().toArray();
             res.send(result);
         });
@@ -98,15 +159,21 @@ async function run() {
 
 
         // Get bookings for a specific user by email
-        app.get('/bookings/:email', async (req, res) => {
-            const email = req.params.email;
+        app.get('/bookings', verifyToken, async (req, res) => {
+            const email = req?.query?.email
+            console.log(req?.params?.email, req?.user?.email, req?.query?.email)
+            if (req.user.email != req.query.email) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
             const query = { userEmail: email };
             const result = await hotelBookingCollections.find(query).toArray();
             res.send(result);
         });
 
+
         // Update a booking date for a specific room
         app.patch('/bookings/update', async (req, res) => {
+
             const { oldDate, newDate, email, roomId } = req.body;
 
             try {
