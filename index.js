@@ -13,6 +13,9 @@ app.use(cors({
     origin: [
         'https://innora-server-side.vercel.app',
         "https://innora-client-side-1.vercel.app",
+        'http://localhost:3000',
+        'http://localhost:3001',
+
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
