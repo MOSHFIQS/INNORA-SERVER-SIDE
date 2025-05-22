@@ -12,6 +12,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 app.use(cors({
     origin: [
         'https://innora-server-side.vercel.app',
+        "https://innora-client-side-1.vercel.app",
         'http://localhost:3000',
         'http://localhost:3001',
 
@@ -65,43 +66,44 @@ async function run() {
         // jwt methods
 
         app.post('/jwt', async (req, res) => {
-            const user = req.body
-            console.log(user, 'this is sign In uesrs email')
-            const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: "5h" })
+            const user = req.body;
+            console.log(user, 'this is sign in user\'s email');
+
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: "5h" });
+
             res
                 .cookie("token", token, {
-                    httpOnly: true,
-                    secure: false,
-                    sameSite: 'strict'
+                    httpOnly: true,       
+                    secure: true,         
+                    sameSite: 'none',     
+                    path: '/'             
                 })
-                .send({ success: true, message: 'response from server', token })
-        })
+                .send({ success: true, message: 'Response from server', token });
+        });
+
 
         app.post('/logout', (req, res) => {
-            res.clearCookie('token')
-            res.send({ success: true })
-        })
-
-
-
-
-
-
-
-
+            res.clearCookie('token', {
+                maxAge: 0,
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                path: '/'
+            }).send({ success: true });
+        });
 
 
 
         // Get all rooms
-        app.get('/rooms', verifyToken,async (req, res) => {
-            console.log(req?.query?.email,req?.user?.email)
-            if ((req.query.email !== req.user.email)){
-                return res.status(403).send({message:'forbidden access'})
+        app.get('/rooms', verifyToken, async (req, res) => {
+            console.log(req?.query?.email, req?.user?.email)
+            if ((req.query.email !== req.user.email)) {
+                return res.status(403).send({ message: 'forbidden access' })
             }
             const result = await roomCollections.find().toArray();
             res.send(result);
         });
-        app.get('/homePageRooms',async (req, res) => {
+        app.get('/homePageRooms', async (req, res) => {
             const result = await roomCollections.find().toArray();
             res.send(result);
         });
@@ -262,7 +264,7 @@ async function run() {
         });
 
         // Get all bookings (admin use case)
-        app.get('/bookings', async (req, res) => {
+        app.get('/allbookings', async (req, res) => {
             const result = await hotelBookingCollections.find().toArray();
             res.send(result);
         });
