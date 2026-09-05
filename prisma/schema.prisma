@@ -1,0 +1,386 @@
+// Prisma schema for INNORA Hotel Management Platform
+// Enterprise-grade schema with relations, soft deletes, indexes, and full hotel lifecycle support
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  STAFF
+  CUSTOMER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum RoomType {
+  DELUXE
+  SUITE
+  STANDARD
+  EXECUTIVE
+  PRESIDENTIAL
+  FAMILY
+}
+
+enum RoomStatus {
+  AVAILABLE
+  BOOKED
+  MAINTENANCE
+  CLEANING
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum InquiryStatus {
+  PENDING
+  CONTACTED
+  RESOLVED
+  CLOSED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  BOOKING
+  SYSTEM
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  CREATE
+  UPDATE
+  DELETE
+  BOOKING_CREATED
+  BOOKING_CANCELLED
+  BOOKING_UPDATED
+  ROOM_CREATED
+  ROOM_UPDATED
+  ROOM_DELETED
+  REVIEW_CREATED
+  ADMIN_ACTION
+  PROFILE_CHANGE
+  ROLE_CHANGE
+  STATUS_CHANGE
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  phone         String?    @unique
+  password      String
+  firstName     String
+  lastName      String
+  fullName      String
+  role          UserRole   @default(CUSTOMER)
+  status        UserStatus @default(ACTIVE)
+  avatarUrl     String?
+  bio           String?
+  address       String?
+  city          String?
+  country       String?
+  postalCode    String?
+  dateOfBirth   DateTime?
+  gender        String?
+  emailVerified Boolean    @default(false)
+  phoneVerified Boolean    @default(false)
+  lastLoginAt   DateTime?
+  lastLoginIp   String?
+  lastDevice    String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  bookings      Booking[]
+  reviews       Review[]
+  inquiries     Inquiry[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+
+  @@index([role])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("innora_users")
+}
+
+// ==================== ROOMS ====================
+
+model Room {
+  id               String      @id @default(uuid())
+  roomId           String      @unique // e.g. "101", "deluxe-ocean-101"
+  roomNumber       String      // e.g. "101", "204"
+  floor            Int         @default(1)
+  title            String
+  slug             String      @unique
+  description      String?
+  shortDescription String?
+  type             RoomType    @default(DELUXE)
+  status           RoomStatus  @default(AVAILABLE)
+  isAvailable      Boolean     @default(true)
+  bedType          String      @default("King") // King, Queen, Twin, Double
+  pricePerNight    Float
+  currency         String      @default("USD")
+  maxGuests        Int         @default(2)
+  roomSizeSqFt     Int         @default(350)
+  view             String      @default("City") // Ocean, Sea, City, Garden, Mountain, Pool
+  features         String[]
+  safetyFeatures   String[]
+  images           Json        // { main: string, gallery: string[] }
+  bookedDates      String[]    // ISO dates e.g. ["2026-09-10", "2026-09-11"]
+  rating           Float       @default(0.0)
+  reviewsCount     Int         @default(0)
+  isFeatured       Boolean     @default(false)
+  isActive         Boolean     @default(true)
+  viewCount        Int         @default(0)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  deletedAt        DateTime?
+
+  // Relations
+  bookings Booking[]
+  reviews  Review[]
+
+  @@index([type])
+  @@index([status])
+  @@index([isAvailable])
+  @@index([isFeatured])
+  @@index([deletedAt])
+  @@map("innora_rooms")
+}
+
+// ==================== BOOKINGS ====================
+
+model Booking {
+  id                 String        @id @default(uuid())
+  bookingNumber      String        @unique // e.g. "INN-2026-0001"
+  userId             String
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId             String
+  room               Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userEmail          String
+  userName           String
+  userPhone          String?
+  title              String
+  image              String
+  date               String        // legacy primary booking date: "YYYY-MM-DD"
+  checkInDate        DateTime?
+  checkOutDate       DateTime?
+  totalNights        Int           @default(1)
+  price              Float
+  totalAmount        Float
+  currency           String        @default("USD")
+  guests             Int           @default(1)
+  specialRequests    String?
+  status             BookingStatus @default(CONFIRMED)
+  paymentStatus      PaymentStatus @default(PAID)
+  cancellationReason String?
+  cancelledAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  deletedAt          DateTime?
+
+  @@index([userId])
+  @@index([roomId])
+  @@index([userEmail])
+  @@index([status])
+  @@index([date])
+  @@index([deletedAt])
+  @@map("innora_bookings")
+}
+
+// ==================== REVIEWS ====================
+
+model Review {
+  id         String       @id @default(uuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId     String
+  room       Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userEmail  String
+  userName   String
+  rating     Int          // 1-5
+  comment    String
+  status     ReviewStatus @default(APPROVED)
+  isVerified Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  deletedAt  DateTime?
+
+  @@index([userId])
+  @@index([roomId])
+  @@index([rating])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("innora_reviews")
+}
+
+// ==================== INQUIRIES / CONTACT MESSAGES ====================
+
+model Inquiry {
+  id            String        @id @default(uuid())
+  inquiryNumber String        @unique
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name          String
+  email         String
+  phone         String?
+  subject       String?
+  message       String
+  status        InquiryStatus @default(PENDING)
+  adminNotes    String?
+  repliedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  @@index([userId])
+  @@index([email])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("innora_inquiries")
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType @default(INFO)
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@map("innora_notifications")
+}
+
+// ==================== AUDIT LOGS ====================
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  role        String?
+  action      AuditAction
+  entity      String?
+  entityId    String?
+  ipAddress   String?
+  device      String?
+  userAgent   String?
+  beforeValue Json?
+  afterValue  Json?
+  description String?
+  createdAt   DateTime    @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("innora_audit_logs")
+}
+
+// ==================== SITE SETTINGS ====================
+
+model SiteSetting {
+  id                  String   @id @default(uuid())
+  siteName            String   @default("INNORA Luxury Hotel & Suites")
+  tagline             String?  @default("Experience Timeless Luxury and Unmatched Hospitality")
+  logoUrl             String?
+  phone               String?  @default("+1 (800) 555-4666")
+  email               String?  @default("concierge@innora.com")
+  address             String?  @default("777 Ocean View Boulevard, Coastal Haven")
+  checkInTime         String?  @default("14:00")
+  checkOutTime        String?  @default("11:00")
+  cancellationPolicy  String?  @default("Free cancellation up to 24 hours prior to check-in.")
+  facebookUrl         String?
+  twitterUrl          String?
+  instagramUrl        String?
+  linkedinUrl         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("innora_site_settings")
+}
+
+// ==================== BANNER SLIDES ====================
+
+model BannerSlide {
+  id                  String   @id @default(uuid())
+  title               String
+  subtitle            String?
+  description         String?
+  badgeText           String?
+  buttonText          String?
+  buttonLink          String?
+  secondaryButtonText String?
+  secondaryButtonLink String?
+  image               String
+  order               Int      @default(0)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([order])
+  @@map("innora_banner_slides")
+}
+
+// ==================== HOTEL SERVICES / AMENITIES ====================
+
+model HotelService {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  icon        String   // Lucide icon name or image URL
+  image       String?
+  category    String   @default("Wellness") // Wellness, Dining, Transport, Business, Leisure
+  price       Float?   @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("innora_hotel_services")
+}
