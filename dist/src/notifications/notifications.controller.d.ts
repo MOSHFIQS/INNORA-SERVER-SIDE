@@ -20,4 +20,19 @@ export declare class NotificationsController {
     }>;
     markAsRead(id: string, user: AuthUser): Promise<import(".prisma/client").Prisma.BatchPayload>;
     markAllAsRead(user: AuthUser): Promise<import(".prisma/client").Prisma.BatchPayload>;
+    createNotification(dto: any): Promise<{
+        data: import("@prisma/client/runtime/client").JsonValue | null;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        type: import(".prisma/client").$Enums.NotificationType;
+        userId: string;
+        message: string;
+        isRead: boolean;
+        readAt: Date | null;
+    } | {
+        count: number;
+        message: string;
+    }>;
 }

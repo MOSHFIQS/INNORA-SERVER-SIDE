@@ -51,6 +51,12 @@ let AuditLogService = class AuditLogService {
             },
         };
     }
+    async findOne(id) {
+        return this.prisma.auditLog.findUnique({
+            where: { id },
+            include: { user: { select: { id: true, email: true, fullName: true, role: true } } },
+        });
+    }
 };
 exports.AuditLogService = AuditLogService;
 exports.AuditLogService = AuditLogService = __decorate([

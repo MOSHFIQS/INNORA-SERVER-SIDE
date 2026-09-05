@@ -45,6 +45,66 @@ export declare class InquiriesService {
             totalPages: number;
         };
     }>;
+    findMyInquiries(userId: string): Promise<{
+        id: string;
+        phone: string | null;
+        email: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        status: import(".prisma/client").$Enums.InquiryStatus;
+        deletedAt: Date | null;
+        userId: string | null;
+        message: string;
+        subject: string | null;
+        inquiryNumber: string;
+        adminNotes: string | null;
+        repliedAt: Date | null;
+    }[]>;
+    findOne(id: string): Promise<{
+        user: {
+            id: string;
+            phone: string | null;
+            email: string;
+            address: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            password: string;
+            firstName: string;
+            lastName: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            status: import(".prisma/client").$Enums.UserStatus;
+            avatarUrl: string | null;
+            bio: string | null;
+            city: string | null;
+            country: string | null;
+            postalCode: string | null;
+            dateOfBirth: Date | null;
+            gender: string | null;
+            emailVerified: boolean;
+            phoneVerified: boolean;
+            lastLoginAt: Date | null;
+            lastLoginIp: string | null;
+            lastDevice: string | null;
+            deletedAt: Date | null;
+        };
+    } & {
+        id: string;
+        phone: string | null;
+        email: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        status: import(".prisma/client").$Enums.InquiryStatus;
+        deletedAt: Date | null;
+        userId: string | null;
+        message: string;
+        subject: string | null;
+        inquiryNumber: string;
+        adminNotes: string | null;
+        repliedAt: Date | null;
+    }>;
     updateStatus(id: string, status: InquiryStatus, adminNotes?: string): Promise<{
         id: string;
         phone: string | null;

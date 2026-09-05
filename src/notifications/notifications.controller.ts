@@ -1,14 +1,19 @@
 import {
+     Body,
      Controller,
      Get,
      Param,
      Patch,
+     Post,
      Query,
      UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
 import { AuthUser, CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 import { NotificationsService } from './notifications.service';
 
 @ApiTags('Notifications')
@@ -40,5 +45,13 @@ export class NotificationsController {
      @ApiOperation({ summary: 'Mark all user notifications as read' })
      markAllAsRead(@CurrentUser() user: AuthUser) {
           return this.notificationsService.markAllAsRead(user.id);
+     }
+
+     @Post()
+     @UseGuards(RolesGuard)
+     @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+     @ApiOperation({ summary: 'Send targeted or broadcast system notification' })
+     createNotification(@Body() dto: any) {
+          return this.notificationsService.create(dto);
      }
 }

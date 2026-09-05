@@ -34,6 +34,12 @@ let InquiriesController = class InquiriesController {
     findAll(query) {
         return this.inquiriesService.findAll(query);
     }
+    findMyInquiries(user) {
+        return this.inquiriesService.findMyInquiries(user.id);
+    }
+    findOne(id) {
+        return this.inquiriesService.findOne(id);
+    }
     updateStatus(id, status, adminNotes) {
         return this.inquiriesService.updateStatus(id, status, adminNotes);
     }
@@ -63,6 +69,26 @@ __decorate([
     __metadata("design:paramtypes", [query_inquiry_dto_1.QueryInquiryDto]),
     __metadata("design:returntype", void 0)
 ], InquiriesController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('my'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get current user inquiries' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], InquiriesController.prototype, "findMyInquiries", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get single inquiry by ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], InquiriesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id/status'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

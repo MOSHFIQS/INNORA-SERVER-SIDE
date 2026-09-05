@@ -34,9 +34,12 @@ export class SettingsService {
 
      async getBanners() {
           return this.prisma.bannerSlide.findMany({
-               where: { isActive: true },
                orderBy: { order: 'asc' },
           });
+     }
+
+     async getBannerById(id: string) {
+          return this.prisma.bannerSlide.findUnique({ where: { id } });
      }
 
      async createBanner(data: any) {

@@ -172,6 +172,42 @@ export class ReviewsService {
           return { message: 'Review deleted successfully' };
      }
 
+     async findMyReviews(userId: string) {
+          return this.prisma.review.findMany({
+               where: { userId, deletedAt: null },
+               include: { room: true },
+               orderBy: { createdAt: 'desc' },
+          });
+     }
+
+     async findOne(id: string) {
+          const review = await this.prisma.review.findFirst({
+               where: { id, deletedAt: null },
+               include: { room: true, user: true },
+          });
+          if (!review) throw new NotFoundException('Review not found');
+          return review;
+     }
+
+     async update(id: string, data: any, userId?: string) {
+          const review = await this.prisma.review.findUnique({ where: { id } });
+          if (!review) throw new NotFoundException('Review not found');
+
+          const updateData: any = {};
+          if (data.rating !== undefined) updateData.rating = Number(data.rating);
+          if (data.comment !== undefined) updateData.comment = data.comment;
+          if (data.status !== undefined) updateData.status = data.status;
+
+          const updated = await this.prisma.review.update({
+               where: { id },
+               data: updateData,
+               include: { room: true },
+          });
+
+          await this.recalculateRoomRating(review.roomId);
+          return updated;
+     }
+
      async updateStatus(id: string, status: ReviewStatus) {
           const review = await this.prisma.review.update({
                where: { id },

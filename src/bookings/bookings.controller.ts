@@ -120,4 +120,16 @@ export class BookingsController {
      ) {
           return this.bookingsService.updateStatus(id, dto, user.id);
      }
+
+     @Patch(':id')
+     @UseGuards(JwtAuthGuard)
+     @ApiBearerAuth('JWT-auth')
+     @ApiOperation({ summary: 'Update booking details and stay information' })
+     update(
+          @Param('id') id: string,
+          @Body() dto: any,
+          @CurrentUser() user: AuthUser,
+     ) {
+          return this.bookingsService.update(id, dto, user.id);
+     }
 }

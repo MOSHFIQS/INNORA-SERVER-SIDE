@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -19,5 +19,11 @@ export class AuditLogController {
      @ApiOperation({ summary: 'Get security and system audit trail' })
      findAll(@Query() query: PaginationDto) {
           return this.auditLogService.findAll(query);
+     }
+
+     @Get(':id')
+     @ApiOperation({ summary: 'Get single audit log payload by ID' })
+     findOne(@Param('id') id: string) {
+          return this.auditLogService.findOne(id);
      }
 }

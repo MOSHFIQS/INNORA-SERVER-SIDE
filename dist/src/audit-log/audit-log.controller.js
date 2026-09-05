@@ -28,6 +28,9 @@ let AuditLogController = class AuditLogController {
     findAll(query) {
         return this.auditLogService.findAll(query);
     }
+    findOne(id) {
+        return this.auditLogService.findOne(id);
+    }
 };
 exports.AuditLogController = AuditLogController;
 __decorate([
@@ -38,6 +41,14 @@ __decorate([
     __metadata("design:paramtypes", [pagination_dto_1.PaginationDto]),
     __metadata("design:returntype", void 0)
 ], AuditLogController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get single audit log payload by ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AuditLogController.prototype, "findOne", null);
 exports.AuditLogController = AuditLogController = __decorate([
     (0, swagger_1.ApiTags)('Audit Logs'),
     (0, common_1.Controller)('audit-logs'),

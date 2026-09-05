@@ -41,4 +41,5 @@ export declare class BookingsController {
     }>;
     findOne(id: string): Promise<any>;
     updateStatus(id: string, dto: UpdateBookingStatusDto, user: AuthUser): Promise<any>;
+    update(id: string, dto: any, user: AuthUser): Promise<any>;
 }

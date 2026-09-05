@@ -471,6 +471,72 @@ export class BookingsService {
           return this.formatBooking(updated);
      }
 
+     async update(id: string, dto: any, currentUserId?: string) {
+          const booking = await this.prisma.booking.findUnique({
+               where: { id },
+               include: { room: true },
+          });
+
+          if (!booking) {
+               throw new NotFoundException('Booking not found');
+          }
+
+          const updateData: any = {};
+          if (dto.userName !== undefined) updateData.userName = dto.userName;
+          if (dto.userEmail !== undefined) updateData.userEmail = dto.userEmail.toLowerCase().trim();
+          if (dto.userPhone !== undefined) updateData.userPhone = dto.userPhone;
+          if (dto.guests !== undefined) updateData.guests = Number(dto.guests);
+          if (dto.specialRequests !== undefined) updateData.specialRequests = dto.specialRequests;
+          if (dto.status !== undefined) updateData.status = dto.status;
+          if (dto.paymentStatus !== undefined) updateData.paymentStatus = dto.paymentStatus;
+          if (dto.price !== undefined) updateData.price = Number(dto.price);
+          if (dto.totalAmount !== undefined) updateData.totalAmount = Number(dto.totalAmount);
+          if (dto.cancellationReason !== undefined) updateData.cancellationReason = dto.cancellationReason;
+
+          // If date changed:
+          if (dto.date && dto.date !== booking.date) {
+               updateData.date = dto.date;
+               if (booking.room) {
+                    const currentDates = (booking.room.bookedDates || []).filter((d) => d !== booking.date);
+                    currentDates.push(dto.date);
+                    await this.prisma.room.update({
+                         where: { id: booking.room.id },
+                         data: { bookedDates: Array.from(new Set(currentDates)) },
+                    });
+               }
+          }
+
+          // If status changed to CANCELLED:
+          if (dto.status === BookingStatus.CANCELLED && booking.status !== BookingStatus.CANCELLED) {
+               updateData.cancelledAt = new Date();
+               if (booking.room) {
+                    const updatedDates = (booking.room.bookedDates || []).filter((d) => d !== booking.date);
+                    await this.prisma.room.update({
+                         where: { id: booking.room.id },
+                         data: { bookedDates: updatedDates },
+                    });
+               }
+          }
+
+          const updated = await this.prisma.booking.update({
+               where: { id },
+               data: updateData,
+               include: { room: true },
+          });
+
+          await this.prisma.auditLog.create({
+               data: {
+                    userId: currentUserId || booking.userId,
+                    action: AuditAction.BOOKING_UPDATED,
+                    entity: 'Booking',
+                    entityId: booking.id,
+                    description: `Updated details for booking #${booking.bookingNumber}`,
+               },
+          });
+
+          return this.formatBooking(updated);
+     }
+
      private formatBooking(booking: any) {
           return {
                ...booking,

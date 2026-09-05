@@ -45,4 +45,11 @@ export class AuditLogService {
                },
           };
      }
+
+     async findOne(id: string) {
+          return this.prisma.auditLog.findUnique({
+               where: { id },
+               include: { user: { select: { id: true, email: true, fullName: true, role: true } } },
+          });
+     }
 }

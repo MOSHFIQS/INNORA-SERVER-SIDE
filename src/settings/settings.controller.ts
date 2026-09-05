@@ -44,6 +44,13 @@ export class SettingsController {
           return this.settingsService.getBanners();
      }
 
+     @Public()
+     @Get('banners/:id')
+     @ApiOperation({ summary: 'Get single hero banner slide' })
+     getBannerById(@Param('id') id: string) {
+          return this.settingsService.getBannerById(id);
+     }
+
      @Post('banners')
      @UseGuards(JwtAuthGuard, RolesGuard)
      @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)

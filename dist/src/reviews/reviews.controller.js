@@ -40,6 +40,15 @@ let ReviewsController = class ReviewsController {
     findAll(query) {
         return this.reviewsService.findAll(query);
     }
+    findMyReviews(user) {
+        return this.reviewsService.findMyReviews(user.id);
+    }
+    findOne(id) {
+        return this.reviewsService.findOne(id);
+    }
+    update(id, data, user) {
+        return this.reviewsService.update(id, data, user.id);
+    }
     updateStatus(id, status) {
         return this.reviewsService.updateStatus(id, status);
     }
@@ -90,6 +99,36 @@ __decorate([
     __metadata("design:paramtypes", [query_review_dto_1.QueryReviewDto]),
     __metadata("design:returntype", void 0)
 ], ReviewsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('reviews/my'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get current user reviews' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ReviewsController.prototype, "findMyReviews", null);
+__decorate([
+    (0, common_1.Get)('reviews/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get single review by ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], ReviewsController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Patch)('reviews/:id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update review content' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], ReviewsController.prototype, "update", null);
 __decorate([
     (0, common_1.Patch)('reviews/:id/status'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

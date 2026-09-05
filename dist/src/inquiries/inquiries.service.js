@@ -67,6 +67,24 @@ let InquiriesService = class InquiriesService {
             },
         };
     }
+    async findMyInquiries(userId) {
+        return this.prisma.inquiry.findMany({
+            where: { userId, deletedAt: null },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+    async findOne(id) {
+        const inquiry = await this.prisma.inquiry.findFirst({
+            where: {
+                deletedAt: null,
+                OR: [{ id }, { inquiryNumber: id }],
+            },
+            include: { user: true },
+        });
+        if (!inquiry)
+            throw new common_1.NotFoundException('Inquiry not found');
+        return inquiry;
+    }
     async updateStatus(id, status, adminNotes) {
         const inquiry = await this.prisma.inquiry.findUnique({ where: { id } });
         if (!inquiry)

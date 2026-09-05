@@ -36,4 +36,26 @@ export declare class AuditLogService {
             totalPages: number;
         };
     }>;
+    findOne(id: string): Promise<{
+        user: {
+            id: string;
+            email: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        role: string | null;
+        description: string | null;
+        userId: string | null;
+        action: import(".prisma/client").$Enums.AuditAction;
+        entity: string | null;
+        entityId: string | null;
+        ipAddress: string | null;
+        device: string | null;
+        userAgent: string | null;
+        beforeValue: Prisma.JsonValue | null;
+        afterValue: Prisma.JsonValue | null;
+    }>;
 }

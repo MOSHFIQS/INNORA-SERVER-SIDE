@@ -54,6 +54,22 @@ export declare class SettingsService {
         secondaryButtonLink: string | null;
         order: number;
     }[]>;
+    getBannerById(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        description: string | null;
+        isActive: boolean;
+        image: string;
+        subtitle: string | null;
+        badgeText: string | null;
+        buttonText: string | null;
+        buttonLink: string | null;
+        secondaryButtonText: string | null;
+        secondaryButtonLink: string | null;
+        order: number;
+    }>;
     createBanner(data: any): Promise<{
         id: string;
         createdAt: Date;

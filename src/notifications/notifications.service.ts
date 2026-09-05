@@ -35,4 +35,41 @@ export class NotificationsService {
                data: { isRead: true, readAt: new Date() },
           });
      }
+
+     async create(dto: { userId?: string; title: string; message: string; type?: any; targetRole?: string }) {
+          if (dto.userId) {
+               return this.prisma.notification.create({
+                    data: {
+                         userId: dto.userId,
+                         title: dto.title,
+                         message: dto.message,
+                         type: dto.type || 'INFO',
+                    },
+               });
+          }
+
+          // Broadcast to users matching role or all active users
+          const users = await this.prisma.user.findMany({
+               where: {
+                    deletedAt: null,
+                    ...(dto.targetRole ? { role: dto.targetRole as any } : {}),
+               },
+               select: { id: true },
+          });
+
+          const created = await Promise.all(
+               users.map((u) =>
+                    this.prisma.notification.create({
+                         data: {
+                              userId: u.id,
+                              title: dto.title,
+                              message: dto.message,
+                              type: dto.type || 'INFO',
+                         },
+                    }),
+               ),
+          );
+
+          return { count: created.length, message: `Notification delivered to ${created.length} users` };
+     }
 }

@@ -42,6 +42,34 @@ let NotificationsService = class NotificationsService {
             data: { isRead: true, readAt: new Date() },
         });
     }
+    async create(dto) {
+        if (dto.userId) {
+            return this.prisma.notification.create({
+                data: {
+                    userId: dto.userId,
+                    title: dto.title,
+                    message: dto.message,
+                    type: dto.type || 'INFO',
+                },
+            });
+        }
+        const users = await this.prisma.user.findMany({
+            where: {
+                deletedAt: null,
+                ...(dto.targetRole ? { role: dto.targetRole } : {}),
+            },
+            select: { id: true },
+        });
+        const created = await Promise.all(users.map((u) => this.prisma.notification.create({
+            data: {
+                userId: u.id,
+                title: dto.title,
+                message: dto.message,
+                type: dto.type || 'INFO',
+            },
+        })));
+        return { count: created.length, message: `Notification delivered to ${created.length} users` };
+    }
 };
 exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = __decorate([

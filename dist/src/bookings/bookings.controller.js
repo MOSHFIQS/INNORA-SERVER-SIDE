@@ -72,6 +72,9 @@ let BookingsController = class BookingsController {
     updateStatus(id, dto, user) {
         return this.bookingsService.updateStatus(id, dto, user.id);
     }
+    update(id, dto, user) {
+        return this.bookingsService.update(id, dto, user.id);
+    }
 };
 exports.BookingsController = BookingsController;
 __decorate([
@@ -159,6 +162,18 @@ __decorate([
     __metadata("design:paramtypes", [String, update_booking_status_dto_1.UpdateBookingStatusDto, Object]),
     __metadata("design:returntype", void 0)
 ], BookingsController.prototype, "updateStatus", null);
+__decorate([
+    (0, common_1.Patch)(':id'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update booking details and stay information' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], BookingsController.prototype, "update", null);
 exports.BookingsController = BookingsController = __decorate([
     (0, swagger_1.ApiTags)('Bookings'),
     (0, common_1.Controller)('bookings'),

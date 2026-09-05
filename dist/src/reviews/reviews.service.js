@@ -155,6 +155,41 @@ let ReviewsService = ReviewsService_1 = class ReviewsService {
         await this.recalculateRoomRating(review.roomId);
         return { message: 'Review deleted successfully' };
     }
+    async findMyReviews(userId) {
+        return this.prisma.review.findMany({
+            where: { userId, deletedAt: null },
+            include: { room: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+    async findOne(id) {
+        const review = await this.prisma.review.findFirst({
+            where: { id, deletedAt: null },
+            include: { room: true, user: true },
+        });
+        if (!review)
+            throw new common_1.NotFoundException('Review not found');
+        return review;
+    }
+    async update(id, data, userId) {
+        const review = await this.prisma.review.findUnique({ where: { id } });
+        if (!review)
+            throw new common_1.NotFoundException('Review not found');
+        const updateData = {};
+        if (data.rating !== undefined)
+            updateData.rating = Number(data.rating);
+        if (data.comment !== undefined)
+            updateData.comment = data.comment;
+        if (data.status !== undefined)
+            updateData.status = data.status;
+        const updated = await this.prisma.review.update({
+            where: { id },
+            data: updateData,
+            include: { room: true },
+        });
+        await this.recalculateRoomRating(review.roomId);
+        return updated;
+    }
     async updateStatus(id, status) {
         const review = await this.prisma.review.update({
             where: { id },

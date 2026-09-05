@@ -43,5 +43,6 @@ export declare class BookingsService {
         booking: any;
     }>;
     updateStatus(id: string, dto: UpdateBookingStatusDto, adminUserId?: string): Promise<any>;
+    update(id: string, dto: any, currentUserId?: string): Promise<any>;
     private formatBooking;
 }

@@ -60,6 +60,28 @@ export class ReviewsController {
           return this.reviewsService.findAll(query);
      }
 
+     @Get('reviews/my')
+     @UseGuards(JwtAuthGuard)
+     @ApiBearerAuth('JWT-auth')
+     @ApiOperation({ summary: 'Get current user reviews' })
+     findMyReviews(@CurrentUser() user: AuthUser) {
+          return this.reviewsService.findMyReviews(user.id);
+     }
+
+     @Get('reviews/:id')
+     @ApiOperation({ summary: 'Get single review by ID' })
+     findOne(@Param('id') id: string) {
+          return this.reviewsService.findOne(id);
+     }
+
+     @Patch('reviews/:id')
+     @UseGuards(JwtAuthGuard)
+     @ApiBearerAuth('JWT-auth')
+     @ApiOperation({ summary: 'Update review content' })
+     update(@Param('id') id: string, @Body() data: any, @CurrentUser() user: AuthUser) {
+          return this.reviewsService.update(id, data, user.id);
+     }
+
      @Patch('reviews/:id/status')
      @UseGuards(JwtAuthGuard, RolesGuard)
      @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
