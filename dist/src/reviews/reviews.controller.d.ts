@@ -118,7 +118,52 @@ export declare class ReviewsController {
             totalPages: number;
         };
     }>;
-    findAll(query: QueryReviewDto): Promise<{
+    findAll(query: QueryReviewDto, user: AuthUser): Promise<({
+        room: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import(".prisma/client").$Enums.RoomStatus;
+            deletedAt: Date | null;
+            roomId: string;
+            slug: string;
+            roomNumber: string;
+            floor: number;
+            title: string;
+            description: string | null;
+            shortDescription: string | null;
+            type: import(".prisma/client").$Enums.RoomType;
+            isAvailable: boolean;
+            bedType: string;
+            pricePerNight: number;
+            currency: string;
+            maxGuests: number;
+            roomSizeSqFt: number;
+            view: string;
+            features: string[];
+            safetyFeatures: string[];
+            images: import("@prisma/client/runtime/client").JsonValue;
+            bookedDates: string[];
+            rating: number;
+            reviewsCount: number;
+            isFeatured: boolean;
+            isActive: boolean;
+            viewCount: number;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import(".prisma/client").$Enums.ReviewStatus;
+        deletedAt: Date | null;
+        roomId: string;
+        rating: number;
+        userId: string;
+        userEmail: string;
+        userName: string;
+        comment: string;
+        isVerified: boolean;
+    })[]> | Promise<{
         data: ({
             user: {
                 id: string;

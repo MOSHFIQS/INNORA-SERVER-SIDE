@@ -33,11 +33,13 @@ export class InquiriesController {
      }
 
      @Get()
-     @UseGuards(JwtAuthGuard, RolesGuard)
-     @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.STAFF)
+     @UseGuards(JwtAuthGuard)
      @ApiBearerAuth('JWT-auth')
-     @ApiOperation({ summary: 'Get all inquiries (Admin/Staff)' })
-     findAll(@Query() query: QueryInquiryDto) {
+     @ApiOperation({ summary: 'Get all inquiries (Admin/Staff) or current user inquiries (Customer)' })
+     findAll(@Query() query: QueryInquiryDto, @CurrentUser() user: AuthUser) {
+          if (user && user.role === UserRole.CUSTOMER) {
+               return this.inquiriesService.findMyInquiries(user.id);
+          }
           return this.inquiriesService.findAll(query);
      }
 
@@ -53,8 +55,8 @@ export class InquiriesController {
      @UseGuards(JwtAuthGuard)
      @ApiBearerAuth('JWT-auth')
      @ApiOperation({ summary: 'Get single inquiry by ID' })
-     findOne(@Param('id') id: string) {
-          return this.inquiriesService.findOne(id);
+     findOne(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+          return this.inquiriesService.findOne(id, user);
      }
 
      @Patch(':id/status')

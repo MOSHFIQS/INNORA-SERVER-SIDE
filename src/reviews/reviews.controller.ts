@@ -52,11 +52,13 @@ export class ReviewsController {
      }
 
      @Get('reviews')
-     @UseGuards(JwtAuthGuard, RolesGuard)
-     @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.STAFF)
+     @UseGuards(JwtAuthGuard)
      @ApiBearerAuth('JWT-auth')
-     @ApiOperation({ summary: 'Get all reviews (Admin/Staff)' })
-     findAll(@Query() query: QueryReviewDto) {
+     @ApiOperation({ summary: 'Get all reviews (Admin/Staff) or current user reviews (Customer)' })
+     findAll(@Query() query: QueryReviewDto, @CurrentUser() user: AuthUser) {
+          if (user && user.role === UserRole.CUSTOMER) {
+               return this.reviewsService.findMyReviews(user.id);
+          }
           return this.reviewsService.findAll(query);
      }
 

@@ -37,7 +37,10 @@ let ReviewsController = class ReviewsController {
     findByRoom(roomId, query) {
         return this.reviewsService.findByRoom(roomId, query);
     }
-    findAll(query) {
+    findAll(query, user) {
+        if (user && user.role === client_1.UserRole.CUSTOMER) {
+            return this.reviewsService.findMyReviews(user.id);
+        }
         return this.reviewsService.findAll(query);
     }
     findMyReviews(user) {
@@ -90,13 +93,13 @@ __decorate([
 ], ReviewsController.prototype, "findByRoom", null);
 __decorate([
     (0, common_1.Get)('reviews'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.STAFF),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get all reviews (Admin/Staff)' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all reviews (Admin/Staff) or current user reviews (Customer)' }),
     __param(0, (0, common_1.Query)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [query_review_dto_1.QueryReviewDto]),
+    __metadata("design:paramtypes", [query_review_dto_1.QueryReviewDto, Object]),
     __metadata("design:returntype", void 0)
 ], ReviewsController.prototype, "findAll", null);
 __decorate([

@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InquiryStatus, Prisma } from '@prisma/client';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { InquiryStatus, Prisma, UserRole } from '@prisma/client';
+import { AuthUser } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { QueryInquiryDto } from './dto/query-inquiry.dto';
@@ -9,16 +10,29 @@ export class InquiriesService {
      constructor(private readonly prisma: PrismaService) {}
 
      async create(dto: CreateInquiryDto, userId?: string) {
+          const normalizedEmail = dto.email.toLowerCase().trim();
+          let resolvedUserId = userId;
+
+          if (!resolvedUserId && normalizedEmail) {
+               const matchedUser = await this.prisma.user.findUnique({
+                    where: { email: normalizedEmail },
+                    select: { id: true },
+               });
+               if (matchedUser) {
+                    resolvedUserId = matchedUser.id;
+               }
+          }
+
           const inquiryNumber = `INQ-${Date.now().toString().slice(-6)}`;
           return this.prisma.inquiry.create({
                data: {
                     inquiryNumber,
-                    userId,
-                    name: dto.name,
-                    email: dto.email.toLowerCase().trim(),
-                    phone: dto.phone,
-                    subject: dto.subject,
-                    message: dto.message,
+                    userId: resolvedUserId,
+                    name: dto.name.trim(),
+                    email: normalizedEmail,
+                    phone: dto.phone?.trim() || null,
+                    subject: dto.subject?.trim() || null,
+                    message: dto.message.trim(),
                     status: InquiryStatus.PENDING,
                },
           });
@@ -64,13 +78,25 @@ export class InquiriesService {
      }
 
      async findMyInquiries(userId: string) {
+          const user = await this.prisma.user.findUnique({
+               where: { id: userId },
+               select: { email: true },
+          });
+          const userEmail = user?.email?.toLowerCase().trim();
+
           return this.prisma.inquiry.findMany({
-               where: { userId, deletedAt: null },
+               where: {
+                    deletedAt: null,
+                    OR: [
+                         { userId },
+                         ...(userEmail ? [{ email: { equals: userEmail, mode: 'insensitive' as const } }] : []),
+                    ],
+               },
                orderBy: { createdAt: 'desc' },
           });
      }
 
-     async findOne(id: string) {
+     async findOne(id: string, user?: AuthUser) {
           const inquiry = await this.prisma.inquiry.findFirst({
                where: {
                     deletedAt: null,
@@ -79,6 +105,17 @@ export class InquiriesService {
                include: { user: true },
           });
           if (!inquiry) throw new NotFoundException('Inquiry not found');
+
+          if (user && user.role === UserRole.CUSTOMER) {
+               const userEmail = user.email?.toLowerCase().trim();
+               const isOwner =
+                    inquiry.userId === user.id ||
+                    (userEmail && inquiry.email.toLowerCase().trim() === userEmail);
+               if (!isOwner) {
+                    throw new ForbiddenException('You do not have permission to view this inquiry');
+               }
+          }
+
           return inquiry;
      }
 

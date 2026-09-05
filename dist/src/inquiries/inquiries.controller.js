@@ -31,14 +31,17 @@ let InquiriesController = class InquiriesController {
     create(dto, user) {
         return this.inquiriesService.create(dto, user?.id);
     }
-    findAll(query) {
+    findAll(query, user) {
+        if (user && user.role === client_1.UserRole.CUSTOMER) {
+            return this.inquiriesService.findMyInquiries(user.id);
+        }
         return this.inquiriesService.findAll(query);
     }
     findMyInquiries(user) {
         return this.inquiriesService.findMyInquiries(user.id);
     }
-    findOne(id) {
-        return this.inquiriesService.findOne(id);
+    findOne(id, user) {
+        return this.inquiriesService.findOne(id, user);
     }
     updateStatus(id, status, adminNotes) {
         return this.inquiriesService.updateStatus(id, status, adminNotes);
@@ -60,13 +63,13 @@ __decorate([
 ], InquiriesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.SUPER_ADMIN, client_1.UserRole.ADMIN, client_1.UserRole.STAFF),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get all inquiries (Admin/Staff)' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all inquiries (Admin/Staff) or current user inquiries (Customer)' }),
     __param(0, (0, common_1.Query)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [query_inquiry_dto_1.QueryInquiryDto]),
+    __metadata("design:paramtypes", [query_inquiry_dto_1.QueryInquiryDto, Object]),
     __metadata("design:returntype", void 0)
 ], InquiriesController.prototype, "findAll", null);
 __decorate([
@@ -85,8 +88,9 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, swagger_1.ApiOperation)({ summary: 'Get single inquiry by ID' }),
     __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], InquiriesController.prototype, "findOne", null);
 __decorate([
