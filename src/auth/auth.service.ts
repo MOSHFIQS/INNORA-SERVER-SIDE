@@ -251,11 +251,16 @@ export class AuthService {
           return user;
      }
 
-     private generateToken(user: { id: string; email: string; role: UserRole }): string {
+     private generateToken(user: any): string {
           const payload: JwtPayload = {
                sub: user.id,
+               id: user.id,
                email: user.email,
                role: user.role,
+               firstName: user.firstName,
+               lastName: user.lastName,
+               fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+               avatarUrl: user.avatarUrl,
           };
           return this.jwtService.sign(payload);
      }

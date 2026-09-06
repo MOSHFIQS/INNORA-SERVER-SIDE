@@ -55,8 +55,13 @@ export class AuthResponseDto {
 
 export interface JwtPayload {
      sub: string;
+     id?: string;
      email: string;
      role: UserRole;
+     firstName?: string;
+     lastName?: string;
+     fullName?: string;
+     avatarUrl?: string | null;
      iat?: number;
      exp?: number;
 }

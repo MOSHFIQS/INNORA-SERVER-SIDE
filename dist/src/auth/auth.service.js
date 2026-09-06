@@ -239,8 +239,13 @@ let AuthService = AuthService_1 = class AuthService {
     generateToken(user) {
         const payload = {
             sub: user.id,
+            id: user.id,
             email: user.email,
             role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            fullName: user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            avatarUrl: user.avatarUrl,
         };
         return this.jwtService.sign(payload);
     }
